@@ -22,10 +22,11 @@ const showingNavigationDropdown = ref(false);
                         <div class="flex">
                             <!-- Logo -->
                             <div class="flex shrink-0 items-center">
-                                <Link :href="route('dashboard')">
+                                <Link :href="route('dashboard')" class="flex items-center gap-2">
                                     <ApplicationLogo
-                                        class="block h-9 w-auto fill-current text-gray-800"
+                                        class="block h-8 w-8 text-indigo-600"
                                     />
+                                    <span class="text-xl font-bold text-slate-900 tracking-tight">StickerApp</span>
                                 </Link>
                             </div>
 
@@ -48,10 +49,10 @@ const showingNavigationDropdown = ref(false);
                             <div class="relative ms-3">
                                 <Dropdown align="right" width="48">
                                     <template #trigger>
-                                        <span class="inline-flex rounded-md">
+                                        <span class="inline-flex">
                                             <button
                                                 type="button"
-                                                class="flex items-center justify-center h-10 w-10 rounded-full bg-indigo-100 text-indigo-700 font-bold text-sm border-2 border-transparent hover:border-indigo-200 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 cursor-pointer"
+                                                class="flex items-center justify-center h-10 w-10 rounded-full bg-indigo-100 text-indigo-700 font-bold text-sm hover:bg-indigo-200 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 cursor-pointer"
                                                 :title="$page.props.auth.user.name"
                                             >
                                                 {{ $page.props.auth.user.name.charAt(0).toUpperCase() }}
@@ -79,7 +80,7 @@ const showingNavigationDropdown = ref(false);
                                                 :href="route('logout')"
                                                 method="post"
                                                 as="button"
-                                                class="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                class="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 cursor-pointer"
                                             >
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-500"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
                                                 Log Out

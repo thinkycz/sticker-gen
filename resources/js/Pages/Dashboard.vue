@@ -35,11 +35,30 @@ const duplicateSheet = (id) => {
         <div class="py-6">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight mb-6">My Sticker Sheets</h2>
             
-            <div v-if="sheets.length === 0" class="text-center py-12 bg-white rounded-lg shadow-sm border border-gray-100">
-                <p class="text-gray-500 mb-4">No sticker sheets found.</p>
-                <Link :href="route('setup')" class="text-indigo-600 hover:text-indigo-800 font-medium cursor-pointer">
-                    Create your first design
-                </Link>
+            <div v-if="sheets.length === 0" class="text-center py-16 bg-white rounded-2xl shadow-sm border border-slate-100">
+                <div class="max-w-md mx-auto">
+                    <div class="w-20 h-20 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-600">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                            <line x1="12" y1="8" x2="12" y2="16"/>
+                            <line x1="8" y1="12" x2="16" y2="12"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold text-slate-900 mb-3">No sticker sheets yet</h3>
+                    <p class="text-slate-600 mb-6 leading-relaxed">
+                        Start creating your first custom sticker sheet with our intuitive design tools. Perfect for labels, barcodes, and more.
+                    </p>
+                    <Link 
+                        :href="route('setup')" 
+                        class="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 transition-colors shadow-sm hover:shadow-lg"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M5 12h14"/>
+                            <path d="M12 5v14"/>
+                        </svg>
+                        Create Your First Design
+                    </Link>
+                </div>
             </div>
 
             <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -82,6 +101,9 @@ const duplicateSheet = (id) => {
                             <div class="flex gap-2">
                                 <Link :href="route('designer', sheet.id)" title="Edit" class="p-1.5 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 hover:text-indigo-900 rounded-md transition-colors cursor-pointer">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                                </Link>
+                                <Link :href="route('designer.preview', sheet.id)" title="Print" class="p-1.5 text-green-600 bg-green-50 hover:bg-green-100 hover:text-green-900 rounded-md transition-colors cursor-pointer">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
                                 </Link>
                                 <button @click="duplicateSheet(sheet.id)" title="Duplicate" class="p-1.5 text-gray-600 bg-gray-50 hover:bg-gray-100 hover:text-gray-900 rounded-md transition-colors cursor-pointer">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>

@@ -21,6 +21,14 @@ Route::get('/', function () {
     ]);
 });
 
+Route::get('/privacy-policy', function () {
+    return Inertia::render('PrivacyPolicy');
+})->name('privacy-policy');
+
+Route::get('/terms-of-service', function () {
+    return Inertia::render('TermsOfService');
+})->name('terms-of-service');
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [StickerSheetController::class, 'index'])->name('dashboard');
 
