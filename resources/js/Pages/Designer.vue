@@ -16,6 +16,8 @@ const selectedId = ref(null);
 const draggingId = ref(null);
 const dragOffset = ref({ x: 0, y: 0 });
 const canvasRef = ref(null);
+const fileInput = ref(null);
+
 
 const selectedElement = computed(() => {
     return elements.value.find(el => el.id === selectedId.value);
@@ -74,10 +76,58 @@ const addElement = (type) => {
         textAlign: 'left',
         barcodeType: 'code128', // or 'ean13', 'qrcode'
         includeText: true,
+        lockAspectRatio: type === 'barcode' ? false : true, // Images locked by default
     };
+    if (type === 'barcode' && newEl.barcodeType === 'qrcode') {
+        newEl.width = 20;
+        newEl.height = 20;
+        newEl.lockAspectRatio = true;
+    }
     elements.value.push(newEl);
     selectedId.value = id;
 };
+
+const triggerImageUpload = () => {
+    fileInput.value.click();
+};
+
+const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        const id = Date.now().toString();
+        const newEl = {
+            id,
+            type: 'image',
+            x: 5,
+            y: 5,
+            width: 40,
+            height: 40,
+            content: event.target.result, // Base64
+            lockAspectRatio: true,
+        };
+        elements.value.push(newEl);
+        selectedId.value = id;
+    };
+    reader.readAsDataURL(file);
+    // Reset input
+    e.target.value = '';
+};
+
+const replaceImage = (e) => {
+    const file = e.target.files[0];
+    if (!file || !selectedElement.value) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        selectedElement.value.content = event.target.result;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+};
+
 
 
 const startResize = (e, element) => {
@@ -97,12 +147,22 @@ const startResize = (e, element) => {
         const dy = (moveEvent.clientY - startY) / zoom.value;
         
         // Convert initial unit width to px, add delta, convert back to unit
-        const newW = pxToUnit(unitToPx(initialW) + dx);
-        const newH = pxToUnit(unitToPx(initialH) + dy);
+        let newW = pxToUnit(unitToPx(initialW) + dx);
+        let newH = pxToUnit(unitToPx(initialH) + dy);
         
+        if (element.lockAspectRatio && initialW > 0 && initialH > 0) {
+            const ratio = initialW / initialH;
+            // Use the larger delta to drive the scaling
+            if (Math.abs(dx) > Math.abs(dy)) {
+                newH = newW / ratio;
+            } else {
+                newW = newH * ratio;
+            }
+        }
+
         // Update element if above minimum size
-        if (newW > 5) element.width = Number(newW.toFixed(2));
-        if (newH > 2) element.height = Number(newH.toFixed(2));
+        if (newW > 1) element.width = Number(newW.toFixed(2));
+        if (newH > 1) element.height = Number(newH.toFixed(2));
     };
     
     const onMouseUp = () => {
@@ -195,14 +255,20 @@ watch(elements, () => {
                     const lib = bwipjs.toCanvas ? bwipjs : (bwipjs.default || bwipjs);
                     
                     if (typeof lib.toCanvas === 'function') {
-                        lib.toCanvas(canvasId, {
+                        const options = {
                             bcid: el.barcodeType || 'code128',
                             text: el.content || '123456',
                             scale: 2,
-                            height: 10,
                             includetext: el.includeText,
                             textxalign: 'center',
-                        });
+                        };
+                        
+                        // For standard barcodes, height is needed. For QR, it's usually automatic/square.
+                        if (el.barcodeType !== 'qrcode') {
+                            options.height = 10;
+                        }
+
+                        lib.toCanvas(canvasId, options);
                     }
                 }
             } catch (e) {
@@ -269,6 +335,13 @@ onMounted(() => {
                         </div>
                         <span class="font-medium text-sm">{{ __('barcode') }}</span>
                     </button>
+                    <button @click="triggerImageUpload" class="w-full flex items-center p-3 bg-white hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 rounded-lg border border-slate-200 hover:border-indigo-200 transition-all group shadow-sm cursor-pointer hover:shadow-md">
+                        <div class="w-8 h-8 rounded bg-slate-100 group-hover:bg-indigo-100 text-slate-500 group-hover:text-indigo-600 flex items-center justify-center mr-3 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                        </div>
+                        <span class="font-medium text-sm">{{ __('image') }}</span>
+                    </button>
+                    <input type="file" ref="fileInput" class="hidden" accept="image/*" @change="handleImageUpload" />
                 </div>
                 
                 <div class="mt-auto border-t border-slate-100 flex flex-col flex-1 min-h-0">
@@ -289,8 +362,9 @@ onMounted(() => {
                             <div class="flex items-center gap-2 overflow-hidden">
                                 <span class="w-4 text-xs text-slate-400 font-mono">{{ elements.length - index }}</span>
                                 <svg v-if="el.type === 'text'" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-70"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
-                                <svg v-else xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-70"><path d="M3 5v14"/><path d="M8 5v14"/><path d="M12 5v14"/><path d="M17 5v14"/><path d="M21 5v14"/></svg>
-                                <span class="truncate">{{ el.content || __(el.type) }}</span>
+                                <svg v-else-if="el.type === 'barcode'" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-70"><path d="M3 5v14"/><path d="M8 5v14"/><path d="M12 5v14"/><path d="M17 5v14"/><path d="M21 5v14"/></svg>
+                                <svg v-else xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-70"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                                <span class="truncate">{{ el.id === draggingId ? __('dragging') : (el.type === 'image' ? __('image') : (el.content || __(el.type))) }}</span>
                             </div>
                             <button @click.stop="removeElement(el.id)" class="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-red-50">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
@@ -350,6 +424,12 @@ onMounted(() => {
                         <div v-if="element.type === 'barcode'" class="pointer-events-none w-full h-full">
                             <canvas :id="`barcode-${element.id}`" class="w-full h-full object-contain"></canvas>
                         </div>
+
+                        <!-- Image Render -->
+                        <div v-if="element.type === 'image'" class="pointer-events-none w-full h-full">
+                            <img :src="element.content" class="w-full h-full object-contain" />
+                        </div>
+
                         
                         <!-- Resize Handles -->
                         <div v-if="selectedId === element.id" 
@@ -428,7 +508,11 @@ onMounted(() => {
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-slate-600 mb-1">{{ __('barcode_type') }}</label>
-                                <select v-model="selectedElement.barcodeType" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-1.5">
+                                <select 
+                                    v-model="selectedElement.barcodeType" 
+                                    @change="selectedElement.barcodeType === 'qrcode' ? (selectedElement.lockAspectRatio = true, selectedElement.height = selectedElement.width) : null"
+                                    class="block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-1.5"
+                                >
                                     <option value="code128">Code 128</option>
                                     <option value="ean13">EAN-13</option>
                                     <option value="qrcode">QR Code</option>
@@ -438,7 +522,38 @@ onMounted(() => {
                                 <input id="includeText" v-model="selectedElement.includeText" type="checkbox" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
                                 <label for="includeText" class="ml-2 block text-sm text-slate-600">{{ __('show_human_readable') }}</label>
                             </div>
+                            <div class="flex items-center pt-2">
+                                <input id="lockAspectBarcode" v-model="selectedElement.lockAspectRatio" type="checkbox" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+                                <label for="lockAspectBarcode" class="ml-2 block text-sm text-slate-600">{{ __('lock_aspect_ratio') }}</label>
+                            </div>
                         </div>
+
+                        <!-- Image Specific -->
+                        <div v-if="selectedElement.type === 'image'" class="space-y-4">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">{{ __('image_settings') }}</h4>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-600 mb-1">{{ __('width') }} ({{ sheet.paper_unit }})</label>
+                                    <input v-model.number="selectedElement.width" type="number" step="0.1" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-1.5 text-center" />
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-600 mb-1">{{ __('height') }} ({{ sheet.paper_unit }})</label>
+                                    <input v-model.number="selectedElement.height" type="number" step="0.1" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-1.5 text-center" />
+                                </div>
+                            </div>
+                            <div class="flex items-center pt-2">
+                                <input id="lockAspect" v-model="selectedElement.lockAspectRatio" type="checkbox" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+                                <label for="lockAspect" class="ml-2 block text-sm text-slate-600">{{ __('lock_aspect_ratio') }}</label>
+                            </div>
+                            <div class="pt-2">
+                                <label class="w-full flex items-center justify-center p-2 bg-indigo-50 text-indigo-700 rounded-lg border border-indigo-200 hover:bg-indigo-100 transition-all cursor-pointer text-sm font-medium">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"/><polyline points="16 5 21 5 21 10"/><path d="m21 5-7 7"/></svg>
+                                    {{ __('replace_image') }}
+                                    <input type="file" class="hidden" accept="image/*" @change="replaceImage" />
+                                </label>
+                            </div>
+                        </div>
+
                     </div>
                     <div v-else class="h-full flex flex-col items-center justify-center text-slate-400 text-sm text-center p-8 opacity-60">
                         <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="mb-3 text-slate-300"><path d="M3 3h18v18H3z"/><path d="m21 3-9 9"/><path d="m21 9-9-9"/><path d="M12 3v9"/></svg>

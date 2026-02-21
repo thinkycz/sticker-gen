@@ -138,6 +138,11 @@ return [
     'show_human_readable' => 'Zobrazit čitelný text',
     'select_element_tip' => 'Vyberte prvek na plátně pro úpravu jeho vlastností',
     'preview' => 'Náhled',
+    'image' => 'Obrázek',
+    'upload_image' => 'Nahrát obrázek',
+    'replace_image' => 'Nahradit obrázek',
+    'image_settings' => 'Nastavení obrázku',
+    'lock_aspect_ratio' => 'Zamknout poměr stran',
 
     // Preview
     'back_to_designer' => 'Zpět do designéru',
@@ -275,6 +280,7 @@ return [
 
     // Language
     'language' => 'Jazyk',
-    'english' => 'English',
-    'czech' => 'Česky',
+    'english' => 'Angličtina',
+    'czech' => 'Čeština',
+    'vietnamese' => 'Vietnamština',
 ];

@@ -138,6 +138,11 @@ return [
     'show_human_readable' => 'Show human-readable text',
     'select_element_tip' => 'Select an element on the canvas to edit its properties',
     'preview' => 'Preview',
+    'image' => 'Image',
+    'upload_image' => 'Upload Image',
+    'replace_image' => 'Replace Image',
+    'image_settings' => 'Image Settings',
+    'lock_aspect_ratio' => 'Lock Aspect Ratio',
 
     // Preview
     'back_to_designer' => 'Back to Designer',
@@ -275,4 +280,5 @@ return [
     'language' => 'Language',
     'english' => 'English',
     'czech' => 'Czech',
+    'vietnamese' => 'Vietnamese',
 ];

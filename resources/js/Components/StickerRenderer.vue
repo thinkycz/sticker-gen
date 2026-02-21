@@ -29,14 +29,19 @@ const renderBarcodes = () => {
                             text = text.padStart(12, '0');
                         }
                         
-                        lib.toCanvas(canvasId, {
+                        const options = {
                             bcid: el.barcodeType || 'code128',
                             text: text,
                             scale: 2, // Resolution scale
-                            height: 10,
                             includetext: el.includeText,
                             textxalign: 'center',
-                        });
+                        };
+
+                        if (el.barcodeType !== 'qrcode') {
+                            options.height = 10;
+                        }
+                        
+                        lib.toCanvas(canvasId, options);
                      }
                 }
             } catch (e) {
@@ -81,6 +86,9 @@ watch(() => props.elements, renderBarcodes, { deep: true });
             </div>
             <div v-if="el.type === 'barcode'" class="w-full h-full">
                 <canvas :id="`barcode-${instanceId}-${el.id}`" class="w-full h-full object-contain"></canvas>
+            </div>
+            <div v-if="el.type === 'image'" class="w-full h-full">
+                <img :src="el.content" class="w-full h-full object-contain" />
             </div>
         </div>
     </div>

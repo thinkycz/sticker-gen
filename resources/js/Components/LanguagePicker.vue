@@ -29,6 +29,7 @@ const switchLanguage = (locale) => {
 const languages = [
     { code: 'en', name: 'English', flag: '🇺🇸' },
     { code: 'cs', name: 'Česky', flag: '🇨🇿' },
+    { code: 'vi', name: 'Tiếng Việt', flag: '🇻🇳' },
 ];
 
 const currentLanguage = computed(() => 
