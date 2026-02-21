@@ -1,6 +1,7 @@
 <script setup>
 import { useForm, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import StickerPreview from '@/Components/StickerPreview.vue';
 import { computed, ref, watchEffect } from 'vue';
 
 const props = defineProps({
@@ -321,23 +322,19 @@ const submit = () => {
                         <h3 class="text-lg font-semibold text-slate-900 mb-4">Live Preview</h3>
                         <div class="bg-slate-100 p-8 rounded-lg flex justify-center items-center overflow-hidden min-h-[400px] border-inner border-slate-200">
                             <!-- Scaled Paper Preview -->
-                            <div 
-                                class="bg-white shadow-lg relative transition-all duration-500 grid ease-out transform hover:scale-[1.02]"
-                                :style="{
-                                    width: '200px',
-                                    height: `${200 * (form.paper_height / form.paper_width)}px`,
-                                    gridTemplateColumns: `repeat(${form.columns}, 1fr)`,
-                                    gridTemplateRows: `repeat(${form.rows}, 1fr)`,
-                                    columnGap: `${(form.gap_horizontal / form.paper_width) * 100}%`,
-                                    rowGap: `${(form.gap_vertical / form.paper_height) * 100}%`,
-                                    padding: `${(form.margin_top / form.paper_height) * 100}% ${(form.margin_right / form.paper_width) * 100}% ${(form.margin_bottom / form.paper_height) * 100}% ${(form.margin_left / form.paper_width) * 100}%`
-                                }"
-                            >
-                                <div 
-                                    v-for="i in (form.rows * form.columns)" 
-                                    :key="i"
-                                    class="bg-indigo-50 border border-indigo-200 rounded-[1px] w-full h-full"
-                                ></div>
+                            <div class="w-[200px] h-auto flex items-center justify-center transition-all duration-500 transform hover:scale-[1.02]">
+                                <StickerPreview 
+                                    :paper-width="parseFloat(form.paper_width)"
+                                    :paper-height="parseFloat(form.paper_height)"
+                                    :rows="form.rows"
+                                    :columns="form.columns"
+                                    :gap-horizontal="parseFloat(form.gap_horizontal)"
+                                    :gap-vertical="parseFloat(form.gap_vertical)"
+                                    :margin-top="parseFloat(form.margin_top)"
+                                    :margin-bottom="parseFloat(form.margin_bottom)"
+                                    :margin-left="parseFloat(form.margin_left)"
+                                    :margin-right="parseFloat(form.margin_right)"
+                                />
                             </div>
                         </div>
                         <div class="mt-4 pt-4 border-t border-slate-100">
