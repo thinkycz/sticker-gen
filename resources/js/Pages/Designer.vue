@@ -190,7 +190,7 @@ const saveAndPreview = () => {
     form.put(route('designer.update', props.sheet.id), {
         preserveScroll: true,
         onSuccess: () => {
-            router.visit(route('preview', props.sheet.id));
+            router.visit(route('designer.preview', props.sheet.id));
         }
     });
 };

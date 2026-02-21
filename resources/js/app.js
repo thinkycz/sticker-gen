@@ -1,17 +1,21 @@
 import '../css/app.css';
-import { createApp, h } from 'vue';
+import './bootstrap';
+
 import { createInertiaApp } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
-import { ZiggyVue } from 'ziggy-js';
-import { route } from 'ziggy-js';
+import { createApp, h } from 'vue';
+import { ZiggyVue } from '../../vendor/tightenco/ziggy';
+
+const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
 createInertiaApp({
-    title: (title) => `${title} - Sticker App`,
-    resolve: (name) => resolvePageComponent(`./Pages/${name}.vue`, import.meta.glob('./Pages/**/*.vue')),
+    title: (title) => `${title} - ${appName}`,
+    resolve: (name) =>
+        resolvePageComponent(
+            `./Pages/${name}.vue`,
+            import.meta.glob('./Pages/**/*.vue'),
+        ),
     setup({ el, App, props, plugin }) {
-        // Make route global
-        window.route = route;
-
         return createApp({ render: () => h(App, props) })
             .use(plugin)
             .use(ZiggyVue)

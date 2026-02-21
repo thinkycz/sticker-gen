@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\SheetConfig;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class SheetConfigController extends Controller
 {
@@ -29,6 +30,7 @@ class SheetConfigController extends Controller
             'margin_right' => 'required|numeric|min:0',
         ]);
 
+        $validated['user_id'] = Auth::id();
         SheetConfig::create($validated);
 
         return back()->with('success', 'Configuration saved successfully!');
@@ -39,6 +41,10 @@ class SheetConfigController extends Controller
      */
     public function destroy(SheetConfig $config)
     {
+        if ($config->user_id !== Auth::id()) {
+            abort(403);
+        }
+
         $config->delete();
 
         return back()->with('success', 'Configuration deleted successfully!');

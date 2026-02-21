@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\StickerSheet;
 use App\Models\SheetConfig;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class StickerSheetController extends Controller
@@ -15,7 +16,7 @@ class StickerSheetController extends Controller
     public function index()
     {
         return Inertia::render('Dashboard', [
-            'sheets' => StickerSheet::latest()->get()
+            'sheets' => StickerSheet::where('user_id', Auth::id())->latest()->get()
         ]);
     }
 
@@ -25,7 +26,10 @@ class StickerSheetController extends Controller
     public function create()
     {
         return Inertia::render('Setup', [
-            'configs' => SheetConfig::latest()->get()
+            'configs' => SheetConfig::where('user_id', Auth::id())
+                ->orWhereNull('user_id')
+                ->latest()
+                ->get()
         ]);
     }
 
@@ -73,6 +77,7 @@ class StickerSheetController extends Controller
             return back()->withErrors(['rows' => "Content height ($totalHeight) exceeds paper height ($paperHeight)."]);
         }
 
+        $validated['user_id'] = Auth::id();
         $sheet = StickerSheet::create($validated);
 
         return redirect()->route('designer', $sheet->id);
@@ -83,6 +88,10 @@ class StickerSheetController extends Controller
      */
     public function show(StickerSheet $sheet)
     {
+        if ($sheet->user_id !== Auth::id()) {
+            abort(403);
+        }
+
         return Inertia::render('Designer', [
             'sheet' => $sheet
         ]);
@@ -93,6 +102,10 @@ class StickerSheetController extends Controller
      */
     public function update(Request $request, StickerSheet $sheet)
     {
+        if ($sheet->user_id !== Auth::id()) {
+            abort(403);
+        }
+
         $validated = $request->validate([
             'design_data' => 'nullable|array',
             'name' => 'nullable|string|max:255',
@@ -108,6 +121,9 @@ class StickerSheetController extends Controller
      */
     public function destroy(StickerSheet $sheet)
     {
+        if ($sheet->user_id !== Auth::id()) {
+            abort(403);
+        }
         $sheet->delete();
         return redirect()->route('dashboard');
     }
@@ -117,7 +133,12 @@ class StickerSheetController extends Controller
      */
     public function duplicate(StickerSheet $sheet)
     {
+        if ($sheet->user_id !== Auth::id()) {
+            abort(403);
+        }
+
         $newSheet = $sheet->replicate();
+        $newSheet->user_id = Auth::id();
         $newSheet->name = $sheet->name ? $sheet->name . ' (Copy)' : 'Copy of ' . $sheet->created_at->format('Y-m-d');
         $newSheet->created_at = now();
         $newSheet->updated_at = now();
@@ -131,6 +152,10 @@ class StickerSheetController extends Controller
      */
     public function preview(StickerSheet $sheet)
     {
+        if ($sheet->user_id !== Auth::id()) {
+            abort(403);
+        }
+
         return Inertia::render('Preview', [
             'sheet' => $sheet
         ]);

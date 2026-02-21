@@ -189,7 +189,7 @@ const submit = () => {
                                             <button @click="loadConfig(config); showPresets = false" class="text-sm text-left flex-1 text-slate-700 font-medium hover:text-indigo-600 transition-colors cursor-pointer">
                                                 {{ config.name }}
                                             </button>
-                                            <button @click="deleteConfig(config.id)" class="text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover/item:opacity-100 p-1 cursor-pointer">
+                                            <button v-if="config.user_id === $page.props.auth.user.id" @click="deleteConfig(config.id)" class="text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover/item:opacity-100 p-1 cursor-pointer">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                                             </button>
                                         </div>

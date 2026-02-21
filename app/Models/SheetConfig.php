@@ -23,4 +23,9 @@ class SheetConfig extends Model
         'margin_left' => 'decimal:2',
         'margin_right' => 'decimal:2',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }
