@@ -3,6 +3,9 @@ import { ref } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import StickerRenderer from '@/Components/StickerRenderer.vue';
+import { useTranslations } from '@/composables/useTranslations';
+
+const { __ } = useTranslations();
 
 const props = defineProps({
     sheet: Object,
@@ -17,11 +20,6 @@ const print = () => {
 };
 
 const getStickerContent = (row, col) => {
-    // In future, could replace variables like {row}, {col}
-    // For now, just clone the design data
-    // We need unique IDs for barcodes if they depend on content? 
-    // Actually StickerRenderer generates unique IDs for canvas.
-    // The content is static for now unless we implement variable replacement logic.
     return props.sheet.design_data || [];
 };
 
@@ -31,7 +29,6 @@ const processContent = (elements, row, col) => {
         let content = el.content;
         if (el.type === 'text' && content) {
             content = content.replace('{row}', row).replace('{col}', col);
-            // Add more variables like {price}, {name} logic here
         }
         return { ...el, content };
     });
@@ -45,11 +42,11 @@ const processContent = (elements, row, col) => {
             <div class="flex items-center space-x-4 print:hidden">
                 <Link :href="route('designer', sheet.id)" class="text-slate-600 hover:text-slate-900 font-medium text-sm transition-colors flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-                    Back to Designer
+                    {{ __('back_to_designer') }}
                 </Link>
                 <button @click="print" class="bg-indigo-600 text-white px-5 py-2 rounded-full shadow-lg hover:bg-indigo-700 hover:shadow-indigo-500/30 transition-all font-semibold text-sm flex items-center gap-2 cursor-pointer hover:scale-105">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
-                    Print Sheet
+                    {{ __('print_sheet') }}
                 </button>
             </div>
         </template>
@@ -57,31 +54,31 @@ const processContent = (elements, row, col) => {
         <div class="flex flex-col lg:flex-row gap-8 print:hidden">
             <!-- Controls -->
             <div class="w-full lg:w-64 bg-white shadow-sm border border-slate-200 rounded-xl p-6 h-fit sticky top-24">
-                <h3 class="font-medium text-gray-900 mb-4">Preview Controls</h3>
+                <h3 class="font-medium text-gray-900 mb-4">{{ __('preview_controls') }}</h3>
                 
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Zoom: {{ zoom }}%</label>
+                        <label class="block text-sm font-medium text-gray-700">{{ __('zoom') }}: {{ zoom }}%</label>
                         <input type="range" min="50" max="200" v-model="zoom" class="w-full mt-2 cursor-pointer">
                     </div>
                     
                     <div class="flex items-center">
                         <input v-model="showCutLines" type="checkbox" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer">
-                        <label class="ml-2 text-sm text-gray-700">Show Cut Lines</label>
+                        <label class="ml-2 text-sm text-gray-700">{{ __('show_cut_lines') }}</label>
                     </div>
 
                     <div class="flex items-center">
                         <input v-model="showMargins" type="checkbox" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer">
-                        <label class="ml-2 text-sm text-gray-700">Show Margins</label>
+                        <label class="ml-2 text-sm text-gray-700">{{ __('show_margins') }}</label>
                     </div>
                 </div>
 
                 <div class="mt-8 pt-6 border-t border-gray-200">
-                    <h4 class="text-sm font-medium text-gray-900 mb-2">Print Checklist</h4>
+                    <h4 class="text-sm font-medium text-gray-900 mb-2">{{ __('print_checklist') }}</h4>
                     <ul class="text-sm text-gray-600 space-y-2 list-disc pl-4">
-                        <li>Paper size: {{ sheet.paper_width }}x{{ sheet.paper_height }}{{ sheet.paper_unit }}</li>
-                        <li>Scale: 100% (Do not "Fit to Page")</li>
-                        <li>Margins: Default/None</li>
+                        <li>{{ __('paper_size_label') }}: {{ sheet.paper_width }}x{{ sheet.paper_height }}{{ sheet.paper_unit }}</li>
+                        <li>{{ __('print_scale_note') }}</li>
+                        <li>{{ __('print_margins_note') }}</li>
                     </ul>
                 </div>
             </div>
@@ -94,7 +91,7 @@ const processContent = (elements, row, col) => {
                         width: `${sheet.paper_width}${sheet.paper_unit}`,
                         height: `${sheet.paper_height}${sheet.paper_unit}`,
                         transform: `scale(${zoom / 100})`,
-                        marginBottom: `${(zoom / 100) * 100}px` // Add some bottom space for scroll
+                        marginBottom: `${(zoom / 100) * 100}px` 
                     }"
                 >
                     <!-- Grid Container -->

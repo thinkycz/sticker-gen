@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StickerSheetController;
 use App\Http\Controllers\SheetConfigController;
@@ -50,5 +51,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
+
+Route::post('/language', [LanguageController::class, 'switch'])->name('language.switch');
 
 require __DIR__.'/auth.php';

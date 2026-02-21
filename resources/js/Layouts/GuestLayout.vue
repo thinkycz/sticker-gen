@@ -1,17 +1,22 @@
 <script setup>
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
+import LanguagePicker from '@/Components/LanguagePicker.vue';
 import { Link } from '@inertiajs/vue3';
 </script>
 
 <template>
     <div
-        class="flex min-h-screen flex-col items-center bg-slate-50 pt-6 sm:justify-center sm:pt-0"
+        class="flex min-h-screen flex-col items-center bg-slate-50 pt-6 sm:justify-center sm:pt-0 relative"
     >
-        <div>
+        <div class="flex items-center gap-2 mb-4">
             <Link href="/" class="flex items-center gap-2">
                 <ApplicationLogo class="h-8 w-8 text-indigo-600" />
                 <span class="text-xl font-bold text-slate-900 tracking-tight">StickerApp</span>
             </Link>
+        </div>
+        
+        <div class="absolute top-6 right-6">
+            <LanguagePicker />
         </div>
 
         <div

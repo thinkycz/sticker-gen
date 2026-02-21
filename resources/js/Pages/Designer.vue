@@ -3,6 +3,9 @@ import { ref, computed, onMounted, nextTick, watch } from 'vue';
 import { useForm, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import bwipjs from 'bwip-js';
+import { useTranslations } from '@/composables/useTranslations';
+
+const { __ } = useTranslations();
 
 const props = defineProps({
     sheet: Object,
@@ -22,11 +25,6 @@ const selectedElement = computed(() => {
 const scale = ref(1);
 const updateScale = () => {
     // Calculate scale to fit canvas in container with padding
-    // For now, fixed scale or simple responsive logic
-    // Let's assume 1px = 1mm for simplicity in data, but scale for display
-    // 1mm ~ 3.78px on screen usually, but let's keep data in 'mm' or 'units' and render in px.
-    // Actually, to make print easy, let's store positions in Unit (mm/in).
-    // And render using CSS scale.
 };
 
 const unitToPx = (val) => {
@@ -81,7 +79,6 @@ const addElement = (type) => {
     selectedId.value = id;
 };
 
-// ... existing removeElement ...
 
 const startResize = (e, element) => {
     e.preventDefault();
@@ -149,12 +146,6 @@ const startDrag = (e, element) => {
         let newX = pxToUnit(currentPxX + dx);
         let newY = pxToUnit(currentPxY + dy);
         
-        // Snap to grid (optional, let's say 1mm snap)
-        // newX = Math.round(newX);
-        // newY = Math.round(newY);
-        
-        // Bounds check (optional)
-        
         element.x = Number(newX.toFixed(2));
         element.y = Number(newY.toFixed(2));
     };
@@ -172,7 +163,7 @@ const startDrag = (e, element) => {
 // Saving
 const form = useForm({
     design_data: [],
-    name: props.sheet.name || 'Untitled Design',
+    name: props.sheet.name || __('untitled_design'),
 });
 
 const save = () => {
@@ -180,7 +171,6 @@ const save = () => {
     form.put(route('designer.update', props.sheet.id), {
         preserveScroll: true,
         onSuccess: () => {
-            // Toast notification could go here
         }
     });
 };
@@ -202,7 +192,6 @@ watch(elements, () => {
                 const canvasId = `barcode-${el.id}`;
                 const canvas = document.getElementById(canvasId);
                 if (canvas && bwipjs) {
-                    // Handle potential module export issues where default might be nested or direct
                     const lib = bwipjs.toCanvas ? bwipjs : (bwipjs.default || bwipjs);
                     
                     if (typeof lib.toCanvas === 'function') {
@@ -214,8 +203,6 @@ watch(elements, () => {
                             includetext: el.includeText,
                             textxalign: 'center',
                         });
-                    } else {
-                        console.warn('bwipjs library loaded but toCanvas not found', lib);
                     }
                 }
             } catch (e) {
@@ -227,9 +214,6 @@ watch(elements, () => {
 
 
 onMounted(() => {
-    // Initial render of barcodes
-    // Trigger watch manually or just wait for next tick?
-    // Let's just trigger a reactivity update or call render logic.
 });
 
 </script>
@@ -243,23 +227,23 @@ onMounted(() => {
                         v-model="form.name" 
                         type="text" 
                         class="border-transparent bg-transparent focus:border-indigo-300 focus:ring-0 text-slate-700 font-semibold text-sm px-2 py-1 rounded hover:bg-slate-100 transition-colors w-48 text-center placeholder-slate-400"
-                        placeholder="Untitled Design"
+                        :placeholder="__('untitled_design')"
                     />
                 </div>
                 <Link :href="route('setup')" class="text-slate-600 hover:text-slate-900 font-medium text-sm transition-colors flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-                    Back
+                    {{ __('back') }}
                 </Link>
                 <button @click="save" class="text-slate-600 hover:text-indigo-600 font-medium text-sm transition-colors flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                    Save Draft
+                    {{ __('save_draft') }}
                 </button>
                 <button 
                     @click="saveAndPreview" 
                     :disabled="form.processing"
                     class="bg-indigo-600 text-white px-5 py-2 rounded-full shadow-lg hover:bg-indigo-700 hover:shadow-indigo-500/30 transition-all font-semibold text-sm flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer hover:scale-105"
                 >
-                    {{ form.processing ? 'Saving...' : 'Print' }}
+                    {{ form.processing ? __('saving') : __('print') }}
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
                 </button>
             </div>
@@ -269,7 +253,7 @@ onMounted(() => {
             <!-- Left: Elements -->
             <div class="w-64 bg-white shadow-sm border border-slate-200 rounded-xl flex flex-col overflow-hidden">
                 <div class="p-4 border-b border-slate-100">
-                    <h3 class="font-semibold text-slate-900">Toolbox</h3>
+                    <h3 class="font-semibold text-slate-900">{{ __('toolbox') }}</h3>
                 </div>
                 
                 <div class="p-4 space-y-3">
@@ -277,23 +261,23 @@ onMounted(() => {
                         <div class="w-8 h-8 rounded bg-slate-100 group-hover:bg-indigo-100 text-slate-500 group-hover:text-indigo-600 flex items-center justify-center mr-3 transition-colors">
                             <span class="font-serif text-lg">Aa</span>
                         </div>
-                        <span class="font-medium text-sm">Text Field</span>
+                        <span class="font-medium text-sm">{{ __('text_field') }}</span>
                     </button>
                     <button @click="addElement('barcode')" class="w-full flex items-center p-3 bg-white hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 rounded-lg border border-slate-200 hover:border-indigo-200 transition-all group shadow-sm cursor-pointer hover:shadow-md">
                         <div class="w-8 h-8 rounded bg-slate-100 group-hover:bg-indigo-100 text-slate-500 group-hover:text-indigo-600 flex items-center justify-center mr-3 transition-colors">
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5v14"/><path d="M8 5v14"/><path d="M12 5v14"/><path d="M17 5v14"/><path d="M21 5v14"/></svg>
                         </div>
-                        <span class="font-medium text-sm">Barcode</span>
+                        <span class="font-medium text-sm">{{ __('barcode') }}</span>
                     </button>
                 </div>
                 
                 <div class="mt-auto border-t border-slate-100 flex flex-col flex-1 min-h-0">
                     <div class="p-3 bg-slate-50 border-b border-slate-100">
-                        <h3 class="font-medium text-xs uppercase tracking-wider text-slate-500">Layers</h3>
+                        <h3 class="font-medium text-xs uppercase tracking-wider text-slate-500">{{ __('layers') }}</h3>
                     </div>
                     <div class="flex-1 overflow-y-auto p-2 space-y-1">
                         <div v-if="elements.length === 0" class="text-center py-8 text-slate-400 text-xs italic">
-                            No layers yet
+                            {{ __('no_layers_yet') }}
                         </div>
                         <div 
                             v-for="(el, index) in elements.slice().reverse()" 
@@ -306,7 +290,7 @@ onMounted(() => {
                                 <span class="w-4 text-xs text-slate-400 font-mono">{{ elements.length - index }}</span>
                                 <svg v-if="el.type === 'text'" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-70"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
                                 <svg v-else xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-70"><path d="M3 5v14"/><path d="M8 5v14"/><path d="M12 5v14"/><path d="M17 5v14"/><path d="M21 5v14"/></svg>
-                                <span class="truncate">{{ el.content || el.type }}</span>
+                                <span class="truncate">{{ el.content || __(el.type) }}</span>
                             </div>
                             <button @click.stop="removeElement(el.id)" class="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-red-50">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
@@ -378,21 +362,21 @@ onMounted(() => {
                 <div class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur px-4 py-2 rounded-full shadow-sm border border-slate-200 text-xs font-medium text-slate-500 flex gap-4">
                      <span>{{ props.sheet.sticker_width }}{{ props.sheet.paper_unit }} x {{ props.sheet.sticker_height }}{{ props.sheet.paper_unit }}</span>
                      <span class="w-px h-4 bg-slate-300"></span>
-                     <span>Zoom: {{ zoom * 100 }}%</span>
+                     <span>{{ __('zoom') }}: {{ zoom * 100 }}%</span>
                 </div>
             </div>
 
             <!-- Right: Properties -->
             <div class="w-72 bg-white shadow-sm border border-slate-200 rounded-xl flex flex-col overflow-hidden">
                 <div class="p-4 border-b border-slate-100 bg-slate-50/50">
-                    <h3 class="font-semibold text-slate-900">Properties</h3>
+                    <h3 class="font-semibold text-slate-900">{{ __('properties') }}</h3>
                 </div>
                 
                 <div class="flex-1 overflow-y-auto p-4">
                     <div v-if="selectedElement" class="space-y-6">
                         <!-- Common -->
                         <div class="space-y-4">
-                            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Position</h4>
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">{{ __('position') }}</h4>
                             <div class="grid grid-cols-2 gap-3">
                                 <div>
                                     <label class="block text-xs font-medium text-slate-600 mb-1">X ({{ sheet.paper_unit }})</label>
@@ -409,27 +393,27 @@ onMounted(() => {
 
                         <!-- Text Specific -->
                         <div v-if="selectedElement.type === 'text'" class="space-y-4">
-                             <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Typography</h4>
+                             <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">{{ __('typography') }}</h4>
                             <div>
-                                <label class="block text-xs font-medium text-slate-600 mb-1">Content</label>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">{{ __('content') }}</label>
                                 <input v-model="selectedElement.content" type="text" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-1.5 text-center" />
                                 <div class="flex gap-1 mt-1.5 flex-wrap">
-                                    <button @click="selectedElement.content += '{price}'" class="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 hover:bg-slate-200 border border-slate-200 cursor-pointer">+ Price</button>
-                                    <button @click="selectedElement.content += '{name}'" class="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 hover:bg-slate-200 border border-slate-200 cursor-pointer">+ Name</button>
+                                    <button @click="selectedElement.content += '{price}'" class="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 hover:bg-slate-200 border border-slate-200 cursor-pointer">{{ __('add_price') }}</button>
+                                    <button @click="selectedElement.content += '{name}'" class="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 hover:bg-slate-200 border border-slate-200 cursor-pointer">{{ __('add_name') }}</button>
                                 </div>
                             </div>
                             <div class="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label class="block text-xs font-medium text-slate-600 mb-1">Size (px)</label>
+                                    <label class="block text-xs font-medium text-slate-600 mb-1">{{ __('size_px') }}</label>
                                     <input v-model.number="selectedElement.fontSize" type="number" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-1.5 text-center" />
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-medium text-slate-600 mb-1">Weight</label>
+                                    <label class="block text-xs font-medium text-slate-600 mb-1">{{ __('weight') }}</label>
                                     <select v-model="selectedElement.fontWeight" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-1.5">
-                                        <option value="normal">Normal</option>
-                                        <option value="bold">Bold</option>
-                                        <option value="100">Thin</option>
-                                        <option value="900">Black</option>
+                                        <option value="normal">{{ __('normal') }}</option>
+                                        <option value="bold">{{ __('bold') }}</option>
+                                        <option value="100">{{ __('thin') }}</option>
+                                        <option value="900">{{ __('black') }}</option>
                                     </select>
                                 </div>
                             </div>
@@ -437,13 +421,13 @@ onMounted(() => {
 
                         <!-- Barcode Specific -->
                         <div v-if="selectedElement.type === 'barcode'" class="space-y-4">
-                            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Barcode Settings</h4>
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">{{ __('barcode_settings') }}</h4>
                             <div>
-                                <label class="block text-xs font-medium text-slate-600 mb-1">Value</label>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">{{ __('barcode_value') }}</label>
                                 <input v-model="selectedElement.content" type="text" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-1.5 text-center" />
                             </div>
                             <div>
-                                <label class="block text-xs font-medium text-slate-600 mb-1">Type</label>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">{{ __('barcode_type') }}</label>
                                 <select v-model="selectedElement.barcodeType" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-1.5">
                                     <option value="code128">Code 128</option>
                                     <option value="ean13">EAN-13</option>
@@ -452,13 +436,13 @@ onMounted(() => {
                             </div>
                             <div class="flex items-center pt-2">
                                 <input id="includeText" v-model="selectedElement.includeText" type="checkbox" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
-                                <label for="includeText" class="ml-2 block text-sm text-slate-600">Show human-readable text</label>
+                                <label for="includeText" class="ml-2 block text-sm text-slate-600">{{ __('show_human_readable') }}</label>
                             </div>
                         </div>
                     </div>
                     <div v-else class="h-full flex flex-col items-center justify-center text-slate-400 text-sm text-center p-8 opacity-60">
                         <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="mb-3 text-slate-300"><path d="M3 3h18v18H3z"/><path d="m21 3-9 9"/><path d="m21 9-9-9"/><path d="M12 3v9"/></svg>
-                        <p>Select an element on the canvas to edit its properties</p>
+                        <p>{{ __('select_element_tip') }}</p>
                     </div>
                 </div>
             </div>

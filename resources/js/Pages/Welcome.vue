@@ -1,5 +1,9 @@
 <script setup>
 import { Head, Link } from '@inertiajs/vue3';
+import LanguagePicker from '@/Components/LanguagePicker.vue';
+import { useTranslations } from '@/composables/useTranslations';
+
+const { __ } = useTranslations();
 
 defineProps({
     canLogin: {
@@ -20,7 +24,7 @@ defineProps({
 </script>
 
 <template>
-    <Head title="Welcome" />
+    <Head :title="__('welcome')" />
     <div class="bg-slate-50 min-h-screen text-slate-800 font-sans selection:bg-indigo-500 selection:text-white">
         <!-- Navigation -->
         <nav class="container mx-auto px-6 py-6 flex justify-between items-center">
@@ -30,34 +34,38 @@ defineProps({
                     <circle cx="8.5" cy="8.5" r="1.5" />
                     <polyline points="21 15 16 10 5 21" />
                 </svg>
-                <span class="text-xl font-bold text-slate-900 tracking-tight">StickerApp</span>
+                <span class="text-xl font-bold text-slate-900 tracking-tight">{{ __('app_name') }}</span>
             </div>
             
-            <div v-if="canLogin" class="flex items-center gap-4">
-                <Link
-                    v-if="$page.props.auth.user"
-                    :href="route('dashboard')"
-                    class="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors"
-                >
-                    Dashboard
-                </Link>
-
-                <template v-else>
+            <div class="flex items-center gap-4">
+                <LanguagePicker />
+                
+                <div v-if="canLogin" class="flex items-center gap-4">
                     <Link
-                        :href="route('login')"
+                        v-if="$page.props.auth.user"
+                        :href="route('dashboard')"
                         class="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors"
                     >
-                        Log in
+                        {{ __('dashboard') }}
                     </Link>
 
-                    <Link
-                        v-if="canRegister"
-                        :href="route('register')"
-                        class="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-full hover:bg-indigo-700 transition-all shadow-md hover:shadow-lg"
-                    >
-                        Register
-                    </Link>
-                </template>
+                    <template v-else>
+                        <Link
+                            :href="route('login')"
+                            class="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors"
+                        >
+                            {{ __('login') }}
+                        </Link>
+
+                        <Link
+                            v-if="canRegister"
+                            :href="route('register')"
+                            class="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-full hover:bg-indigo-700 transition-all shadow-md hover:shadow-lg"
+                        >
+                            {{ __('register') }}
+                        </Link>
+                    </template>
+                </div>
             </div>
         </nav>
 
@@ -65,11 +73,11 @@ defineProps({
         <header class="container mx-auto px-6 py-20 md:py-32 text-center">
             <div class="max-w-4xl mx-auto space-y-8 animate-fade-in-up">
                 <h1 class="text-5xl md:text-7xl font-extrabold text-slate-900 tracking-tight leading-tight">
-                    Design & Print <br />
-                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">Custom Stickers</span>
+                    {{ __('tagline') }} <br />
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">{{ __('subtagline') }}</span>
                 </h1>
                 <p class="text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed">
-                    Create professional barcode labels, product stickers, and custom layouts in seconds. No complex software required.
+                    {{ __('description') }}
                 </p>
                 <div class="flex flex-col sm:flex-row justify-center gap-4 pt-4">
                     <Link
@@ -77,14 +85,14 @@ defineProps({
                         :href="route('register')"
                         class="px-8 py-4 text-lg font-bold text-white bg-indigo-600 rounded-full hover:bg-indigo-700 transition-all shadow-xl hover:shadow-indigo-500/30 hover:-translate-y-1"
                     >
-                        Start Designing Free
+                        {{ __('start_designing_free') }}
                     </Link>
                     <Link
                         v-else
                         :href="route('dashboard')"
                         class="px-8 py-4 text-lg font-bold text-white bg-indigo-600 rounded-full hover:bg-indigo-700 transition-all shadow-xl hover:shadow-indigo-500/30 hover:-translate-y-1"
                     >
-                        Go to Dashboard
+                        {{ __('go_to_dashboard') }}
                     </Link>
                 </div>
             </div>
@@ -102,8 +110,8 @@ defineProps({
                                 <div class="w-16 h-16 bg-indigo-100 rounded-full mx-auto flex items-center justify-center mb-4">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                                 </div>
-                                <h3 class="text-xl font-bold text-slate-900 mb-2">Ready to Print</h3>
-                                <p class="text-slate-500">Perfectly aligned stickers, every time.</p>
+                                <h3 class="text-xl font-bold text-slate-900 mb-2">{{ __('ready_to_print') }}</h3>
+                                <p class="text-slate-500">{{ __('perfectly_aligned') }}</p>
                             </div>
                          </div>
                          <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-100 to-transparent z-10 h-32"></div>
@@ -117,10 +125,10 @@ defineProps({
             <div class="container mx-auto px-6">
                 <div class="text-center mb-20">
                     <h2 class="text-4xl md:text-5xl font-bold text-slate-900 mb-6 bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent">
-                        Everything you need
+                        {{ __('everything_you_need') }}
                     </h2>
                     <p class="text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
-                        Powerful tools to help you create the perfect layout for any paper size with professional results every time.
+                        {{ __('powerful_tools_desc') }}
                     </p>
                 </div>
 
@@ -131,12 +139,12 @@ defineProps({
                             <div class="w-14 h-14 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white mb-6 shadow-lg group-hover:shadow-xl transition-shadow duration-300">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
                             </div>
-                            <h3 class="text-2xl font-bold text-slate-900 mb-4">Custom Layouts</h3>
+                            <h3 class="text-2xl font-bold text-slate-900 mb-4">{{ __('custom_layouts') }}</h3>
                             <p class="text-slate-600 leading-relaxed text-lg">
-                                Define rows, columns, margins, and gaps. Support for A4, Letter, or any custom paper size with pixel-perfect precision.
+                                {{ __('custom_layouts_desc') }}
                             </p>
                             <div class="mt-6 flex items-center text-indigo-600 font-semibold group-hover:text-indigo-700 transition-colors">
-                                <span class="text-sm">Learn more</span>
+                                <span class="text-sm">{{ __('learn_more') }}</span>
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-2 group-hover:translate-x-1 transition-transform duration-300"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                             </div>
                         </div>
@@ -148,12 +156,12 @@ defineProps({
                             <div class="w-14 h-14 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center text-white mb-6 shadow-lg group-hover:shadow-xl transition-shadow duration-300">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5v14"/><path d="M8 5v14"/><path d="M12 5v14"/><path d="M17 5v14"/><path d="M21 5v14"/></svg>
                             </div>
-                            <h3 class="text-2xl font-bold text-slate-900 mb-4">Barcode Generation</h3>
+                            <h3 class="text-2xl font-bold text-slate-900 mb-4">{{ __('barcode_generation') }}</h3>
                             <p class="text-slate-600 leading-relaxed text-lg">
-                                Built-in support for Code128, EAN-13, QR Codes, and more. Generate professional labels instantly with error-free encoding.
+                                {{ __('barcode_generation_desc') }}
                             </p>
                             <div class="mt-6 flex items-center text-purple-600 font-semibold group-hover:text-purple-700 transition-colors">
-                                <span class="text-sm">Learn more</span>
+                                <span class="text-sm">{{ __('learn_more') }}</span>
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-2 group-hover:translate-x-1 transition-transform duration-300"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                             </div>
                         </div>
@@ -165,12 +173,12 @@ defineProps({
                             <div class="w-14 h-14 bg-gradient-to-br from-pink-500 to-pink-600 rounded-2xl flex items-center justify-center text-white mb-6 shadow-lg group-hover:shadow-xl transition-shadow duration-300">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
                             </div>
-                            <h3 class="text-2xl font-bold text-slate-900 mb-4">Print Ready</h3>
+                            <h3 class="text-2xl font-bold text-slate-900 mb-4">{{ __('print_ready') }}</h3>
                             <p class="text-slate-600 leading-relaxed text-lg">
-                                Export directly to PDF or print from browser with pixel-perfect alignment. Optimized for both home and professional printing.
+                                {{ __('print_ready_desc') }}
                             </p>
                             <div class="mt-6 flex items-center text-pink-600 font-semibold group-hover:text-pink-700 transition-colors">
-                                <span class="text-sm">Learn more</span>
+                                <span class="text-sm">{{ __('learn_more') }}</span>
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-2 group-hover:translate-x-1 transition-transform duration-300"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                             </div>
                         </div>
@@ -183,11 +191,11 @@ defineProps({
         <footer class="bg-slate-50 border-t border-slate-200 py-12">
             <div class="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
                 <div class="text-slate-500 text-sm">
-                    &copy; 2026 StickerApp. All rights reserved.
+                    {{ __('copyright', { year: new Date().getFullYear() }) }}
                 </div>
                 <div class="flex gap-6">
-                    <Link :href="route('privacy-policy')" class="text-slate-400 hover:text-slate-600 transition-colors">Privacy Policy</Link>
-                    <Link :href="route('terms-of-service')" class="text-slate-400 hover:text-slate-600 transition-colors">Terms of Service</Link>
+                    <Link :href="route('privacy-policy')" class="text-slate-400 hover:text-slate-600 transition-colors">{{ __('privacy_policy') }}</Link>
+                    <Link :href="route('terms-of-service')" class="text-slate-400 hover:text-slate-600 transition-colors">{{ __('terms_of_service') }}</Link>
                 </div>
             </div>
         </footer>
