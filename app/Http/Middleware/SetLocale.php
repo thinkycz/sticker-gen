@@ -18,7 +18,7 @@ class SetLocale
     public function handle(Request $request, Closure $next): Response
     {
         // Always set locale from session or detect from browser
-        $locale = Session::get('locale', $request->getPreferredLanguage(['en', 'cs']));
+        $locale = Session::get('locale', $request->getPreferredLanguage(['en', 'cs', 'vi']));
         
         // Update session if locale was submitted via form
         if ($request->isMethod('POST') && $request->has('locale')) {

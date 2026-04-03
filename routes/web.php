@@ -3,6 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StickerSheetController;
 use App\Http\Controllers\SheetConfigController;
+use App\Http\Controllers\LanguageController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -28,6 +29,8 @@ Route::get('/privacy-policy', function () {
 Route::get('/terms-of-service', function () {
     return Inertia::render('TermsOfService');
 })->name('terms-of-service');
+
+Route::post('/language', [LanguageController::class, 'switch'])->name('language.switch');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [StickerSheetController::class, 'index'])->name('dashboard');

@@ -14,11 +14,11 @@ class LanguageController extends Controller
     public function switch(Request $request)
     {
         $request->validate([
-            'locale' => 'required|in:en,cs',
+            'locale' => 'required|in:en,cs,vi',
         ]);
 
         Session::put('locale', $request->locale);
 
-        return Inertia::location(url()->previous());
+        return back();
     }
 }
