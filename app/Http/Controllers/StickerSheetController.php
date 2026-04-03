@@ -84,6 +84,77 @@ class StickerSheetController extends Controller
     }
 
     /**
+     * Show the setup screen for an existing sheet.
+     */
+    public function edit(StickerSheet $sheet)
+    {
+        if ($sheet->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        return Inertia::render('Setup', [
+            'sheet' => $sheet,
+            'configs' => SheetConfig::where('user_id', Auth::id())
+                ->orWhereNull('user_id')
+                ->latest()
+                ->get()
+        ]);
+    }
+
+    /**
+     * Update the layout configuration of an existing sheet and redirect to designer.
+     */
+    public function updateSetup(Request $request, StickerSheet $sheet)
+    {
+        if ($sheet->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'name' => 'nullable|string|max:255',
+            'paper_unit' => 'required|in:mm,in',
+            'paper_width' => 'required|numeric|min:1',
+            'paper_height' => 'required|numeric|min:1',
+            'sticker_width' => 'required|numeric|min:1',
+            'sticker_height' => 'required|numeric|min:1',
+            'rows' => 'required|integer|min:1',
+            'columns' => 'required|integer|min:1',
+            'gap_horizontal' => 'required|numeric|min:0',
+            'gap_vertical' => 'required|numeric|min:0',
+            'margin_top' => 'required|numeric|min:0',
+            'margin_bottom' => 'required|numeric|min:0',
+            'margin_left' => 'required|numeric|min:0',
+            'margin_right' => 'required|numeric|min:0',
+        ]);
+
+        // Validation logic for grid fit
+        $paperWidth = $validated['paper_width'];
+        $paperHeight = $validated['paper_height'];
+        
+        $totalWidth = $validated['margin_left'] + 
+                      ($validated['columns'] * $validated['sticker_width']) + 
+                      (($validated['columns'] - 1) * $validated['gap_horizontal']) + 
+                      $validated['margin_right'];
+
+        $totalHeight = $validated['margin_top'] + 
+                       ($validated['rows'] * $validated['sticker_height']) + 
+                       (($validated['rows'] - 1) * $validated['gap_vertical']) + 
+                       $validated['margin_bottom'];
+
+        if ($totalWidth > $paperWidth) {
+            return back()->withErrors(['columns' => "Content width ($totalWidth) exceeds paper width ($paperWidth)."]);
+        }
+
+        if ($totalHeight > $paperHeight) {
+            return back()->withErrors(['rows' => "Content height ($totalHeight) exceeds paper height ($paperHeight)."]);
+        }
+
+        $sheet->update($validated);
+
+        return redirect()->route('designer', $sheet->id);
+    }
+
+    /**
      * Show the designer screen (Screen 2).
      */
     public function show(StickerSheet $sheet)

@@ -10,23 +10,27 @@ const { __ } = useTranslations();
 const props = defineProps({
     errors: Object,
     configs: Array,
+    sheet: {
+        type: Object,
+        default: null
+    }
 });
 
 const form = useForm({
-    name: __('untitled_design'),
-    paper_unit: 'mm',
-    paper_width: 210,
-    paper_height: 297,
-    sticker_width: 60,
-    sticker_height: 30,
-    rows: 8,
-    columns: 3,
-    gap_horizontal: 5,
-    gap_vertical: 5,
-    margin_top: 10,
-    margin_bottom: 10,
-    margin_left: 10,
-    margin_right: 10,
+    name: props.sheet?.name || __('untitled_design'),
+    paper_unit: props.sheet?.paper_unit || 'mm',
+    paper_width: props.sheet?.paper_width ? parseFloat(props.sheet.paper_width) : 210,
+    paper_height: props.sheet?.paper_height ? parseFloat(props.sheet.paper_height) : 297,
+    sticker_width: props.sheet?.sticker_width ? parseFloat(props.sheet.sticker_width) : 60,
+    sticker_height: props.sheet?.sticker_height ? parseFloat(props.sheet.sticker_height) : 30,
+    rows: props.sheet?.rows || 8,
+    columns: props.sheet?.columns || 3,
+    gap_horizontal: props.sheet?.gap_horizontal ? parseFloat(props.sheet.gap_horizontal) : 5,
+    gap_vertical: props.sheet?.gap_vertical ? parseFloat(props.sheet.gap_vertical) : 5,
+    margin_top: props.sheet?.margin_top ? parseFloat(props.sheet.margin_top) : 10,
+    margin_bottom: props.sheet?.margin_bottom ? parseFloat(props.sheet.margin_bottom) : 10,
+    margin_left: props.sheet?.margin_left ? parseFloat(props.sheet.margin_left) : 10,
+    margin_right: props.sheet?.margin_right ? parseFloat(props.sheet.margin_right) : 10,
 });
 
 const showSaveModal = ref(false);
@@ -147,7 +151,11 @@ const isValid = computed(() => {
 });
 
 const submit = () => {
-    form.post(route('setup.store'));
+    if (props.sheet) {
+        form.put(route('setup.update', props.sheet.id));
+    } else {
+        form.post(route('setup.store'));
+    }
 };
 </script>
 

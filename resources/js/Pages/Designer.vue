@@ -246,7 +246,7 @@ onMounted(() => {
                         placeholder="Untitled Design"
                     />
                 </div>
-                <Link :href="route('setup')" class="text-slate-600 hover:text-slate-900 font-medium text-sm transition-colors flex items-center gap-2">
+                <Link :href="route('setup.edit', props.sheet.id)" class="text-slate-600 hover:text-slate-900 font-medium text-sm transition-colors flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
                     Back
                 </Link>

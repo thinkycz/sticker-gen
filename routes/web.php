@@ -34,6 +34,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/setup', [StickerSheetController::class, 'create'])->name('setup');
     Route::post('/setup', [StickerSheetController::class, 'store'])->name('setup.store');
+    Route::get('/setup/{sheet}/edit', [StickerSheetController::class, 'edit'])->name('setup.edit');
+    Route::put('/setup/{sheet}', [StickerSheetController::class, 'updateSetup'])->name('setup.update');
 
     Route::get('/designer/{sheet}', [StickerSheetController::class, 'show'])->name('designer');
     Route::post('/designer/{sheet}', [StickerSheetController::class, 'update'])->name('designer.update');
