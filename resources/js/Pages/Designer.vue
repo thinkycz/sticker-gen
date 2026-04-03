@@ -3,9 +3,6 @@ import { ref, computed, onMounted, nextTick, watch } from 'vue';
 import { useForm, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import bwipjs from 'bwip-js';
-import { useTranslations } from '@/composables/useTranslations';
-
-const { __ } = useTranslations();
 
 const props = defineProps({
     sheet: Object,
@@ -16,8 +13,6 @@ const selectedId = ref(null);
 const draggingId = ref(null);
 const dragOffset = ref({ x: 0, y: 0 });
 const canvasRef = ref(null);
-const fileInput = ref(null);
-
 
 const selectedElement = computed(() => {
     return elements.value.find(el => el.id === selectedId.value);
@@ -27,6 +22,11 @@ const selectedElement = computed(() => {
 const scale = ref(1);
 const updateScale = () => {
     // Calculate scale to fit canvas in container with padding
+    // For now, fixed scale or simple responsive logic
+    // Let's assume 1px = 1mm for simplicity in data, but scale for display
+    // 1mm ~ 3.78px on screen usually, but let's keep data in 'mm' or 'units' and render in px.
+    // Actually, to make print easy, let's store positions in Unit (mm/in).
+    // And render using CSS scale.
 };
 
 const unitToPx = (val) => {
@@ -76,59 +76,12 @@ const addElement = (type) => {
         textAlign: 'left',
         barcodeType: 'code128', // or 'ean13', 'qrcode'
         includeText: true,
-        lockAspectRatio: type === 'barcode' ? false : true, // Images locked by default
     };
-    if (type === 'barcode' && newEl.barcodeType === 'qrcode') {
-        newEl.width = 20;
-        newEl.height = 20;
-        newEl.lockAspectRatio = true;
-    }
     elements.value.push(newEl);
     selectedId.value = id;
 };
 
-const triggerImageUpload = () => {
-    fileInput.value.click();
-};
-
-const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-        const id = Date.now().toString();
-        const newEl = {
-            id,
-            type: 'image',
-            x: 5,
-            y: 5,
-            width: 40,
-            height: 40,
-            content: event.target.result, // Base64
-            lockAspectRatio: true,
-        };
-        elements.value.push(newEl);
-        selectedId.value = id;
-    };
-    reader.readAsDataURL(file);
-    // Reset input
-    e.target.value = '';
-};
-
-const replaceImage = (e) => {
-    const file = e.target.files[0];
-    if (!file || !selectedElement.value) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-        selectedElement.value.content = event.target.result;
-    };
-    reader.readAsDataURL(file);
-    e.target.value = '';
-};
-
-
+// ... existing removeElement ...
 
 const startResize = (e, element) => {
     e.preventDefault();
@@ -147,22 +100,12 @@ const startResize = (e, element) => {
         const dy = (moveEvent.clientY - startY) / zoom.value;
         
         // Convert initial unit width to px, add delta, convert back to unit
-        let newW = pxToUnit(unitToPx(initialW) + dx);
-        let newH = pxToUnit(unitToPx(initialH) + dy);
+        const newW = pxToUnit(unitToPx(initialW) + dx);
+        const newH = pxToUnit(unitToPx(initialH) + dy);
         
-        if (element.lockAspectRatio && initialW > 0 && initialH > 0) {
-            const ratio = initialW / initialH;
-            // Use the larger delta to drive the scaling
-            if (Math.abs(dx) > Math.abs(dy)) {
-                newH = newW / ratio;
-            } else {
-                newW = newH * ratio;
-            }
-        }
-
         // Update element if above minimum size
-        if (newW > 1) element.width = Number(newW.toFixed(2));
-        if (newH > 1) element.height = Number(newH.toFixed(2));
+        if (newW > 5) element.width = Number(newW.toFixed(2));
+        if (newH > 2) element.height = Number(newH.toFixed(2));
     };
     
     const onMouseUp = () => {
@@ -206,6 +149,12 @@ const startDrag = (e, element) => {
         let newX = pxToUnit(currentPxX + dx);
         let newY = pxToUnit(currentPxY + dy);
         
+        // Snap to grid (optional, let's say 1mm snap)
+        // newX = Math.round(newX);
+        // newY = Math.round(newY);
+        
+        // Bounds check (optional)
+        
         element.x = Number(newX.toFixed(2));
         element.y = Number(newY.toFixed(2));
     };
@@ -223,7 +172,7 @@ const startDrag = (e, element) => {
 // Saving
 const form = useForm({
     design_data: [],
-    name: props.sheet.name || __('untitled_design'),
+    name: props.sheet.name || 'Untitled Design',
 });
 
 const save = () => {
@@ -231,6 +180,7 @@ const save = () => {
     form.put(route('designer.update', props.sheet.id), {
         preserveScroll: true,
         onSuccess: () => {
+            // Toast notification could go here
         }
     });
 };
@@ -240,7 +190,7 @@ const saveAndPreview = () => {
     form.put(route('designer.update', props.sheet.id), {
         preserveScroll: true,
         onSuccess: () => {
-            router.visit(route('designer.preview', props.sheet.id));
+            router.visit(route('preview', props.sheet.id));
         }
     });
 };
@@ -252,23 +202,20 @@ watch(elements, () => {
                 const canvasId = `barcode-${el.id}`;
                 const canvas = document.getElementById(canvasId);
                 if (canvas && bwipjs) {
+                    // Handle potential module export issues where default might be nested or direct
                     const lib = bwipjs.toCanvas ? bwipjs : (bwipjs.default || bwipjs);
                     
                     if (typeof lib.toCanvas === 'function') {
-                        const options = {
+                        lib.toCanvas(canvasId, {
                             bcid: el.barcodeType || 'code128',
                             text: el.content || '123456',
                             scale: 2,
+                            height: 10,
                             includetext: el.includeText,
                             textxalign: 'center',
-                        };
-                        
-                        // For standard barcodes, height is needed. For QR, it's usually automatic/square.
-                        if (el.barcodeType !== 'qrcode') {
-                            options.height = 10;
-                        }
-
-                        lib.toCanvas(canvasId, options);
+                        });
+                    } else {
+                        console.warn('bwipjs library loaded but toCanvas not found', lib);
                     }
                 }
             } catch (e) {
@@ -280,6 +227,9 @@ watch(elements, () => {
 
 
 onMounted(() => {
+    // Initial render of barcodes
+    // Trigger watch manually or just wait for next tick?
+    // Let's just trigger a reactivity update or call render logic.
 });
 
 </script>
@@ -293,23 +243,23 @@ onMounted(() => {
                         v-model="form.name" 
                         type="text" 
                         class="border-transparent bg-transparent focus:border-indigo-300 focus:ring-0 text-slate-700 font-semibold text-sm px-2 py-1 rounded hover:bg-slate-100 transition-colors w-48 text-center placeholder-slate-400"
-                        :placeholder="__('untitled_design')"
+                        placeholder="Untitled Design"
                     />
                 </div>
                 <Link :href="route('setup')" class="text-slate-600 hover:text-slate-900 font-medium text-sm transition-colors flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-                    {{ __('back') }}
+                    Back
                 </Link>
                 <button @click="save" class="text-slate-600 hover:text-indigo-600 font-medium text-sm transition-colors flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                    {{ __('save_draft') }}
+                    Save Draft
                 </button>
                 <button 
                     @click="saveAndPreview" 
                     :disabled="form.processing"
                     class="bg-indigo-600 text-white px-5 py-2 rounded-full shadow-lg hover:bg-indigo-700 hover:shadow-indigo-500/30 transition-all font-semibold text-sm flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer hover:scale-105"
                 >
-                    {{ form.processing ? __('saving') : __('print') }}
+                    {{ form.processing ? 'Saving...' : 'Print' }}
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
                 </button>
             </div>
@@ -319,7 +269,7 @@ onMounted(() => {
             <!-- Left: Elements -->
             <div class="w-64 bg-white shadow-sm border border-slate-200 rounded-xl flex flex-col overflow-hidden">
                 <div class="p-4 border-b border-slate-100">
-                    <h3 class="font-semibold text-slate-900">{{ __('toolbox') }}</h3>
+                    <h3 class="font-semibold text-slate-900">Toolbox</h3>
                 </div>
                 
                 <div class="p-4 space-y-3">
@@ -327,30 +277,23 @@ onMounted(() => {
                         <div class="w-8 h-8 rounded bg-slate-100 group-hover:bg-indigo-100 text-slate-500 group-hover:text-indigo-600 flex items-center justify-center mr-3 transition-colors">
                             <span class="font-serif text-lg">Aa</span>
                         </div>
-                        <span class="font-medium text-sm">{{ __('text_field') }}</span>
+                        <span class="font-medium text-sm">Text Field</span>
                     </button>
                     <button @click="addElement('barcode')" class="w-full flex items-center p-3 bg-white hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 rounded-lg border border-slate-200 hover:border-indigo-200 transition-all group shadow-sm cursor-pointer hover:shadow-md">
                         <div class="w-8 h-8 rounded bg-slate-100 group-hover:bg-indigo-100 text-slate-500 group-hover:text-indigo-600 flex items-center justify-center mr-3 transition-colors">
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5v14"/><path d="M8 5v14"/><path d="M12 5v14"/><path d="M17 5v14"/><path d="M21 5v14"/></svg>
                         </div>
-                        <span class="font-medium text-sm">{{ __('barcode') }}</span>
+                        <span class="font-medium text-sm">Barcode</span>
                     </button>
-                    <button @click="triggerImageUpload" class="w-full flex items-center p-3 bg-white hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 rounded-lg border border-slate-200 hover:border-indigo-200 transition-all group shadow-sm cursor-pointer hover:shadow-md">
-                        <div class="w-8 h-8 rounded bg-slate-100 group-hover:bg-indigo-100 text-slate-500 group-hover:text-indigo-600 flex items-center justify-center mr-3 transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
-                        </div>
-                        <span class="font-medium text-sm">{{ __('image') }}</span>
-                    </button>
-                    <input type="file" ref="fileInput" class="hidden" accept="image/*" @change="handleImageUpload" />
                 </div>
                 
                 <div class="mt-auto border-t border-slate-100 flex flex-col flex-1 min-h-0">
                     <div class="p-3 bg-slate-50 border-b border-slate-100">
-                        <h3 class="font-medium text-xs uppercase tracking-wider text-slate-500">{{ __('layers') }}</h3>
+                        <h3 class="font-medium text-xs uppercase tracking-wider text-slate-500">Layers</h3>
                     </div>
                     <div class="flex-1 overflow-y-auto p-2 space-y-1">
                         <div v-if="elements.length === 0" class="text-center py-8 text-slate-400 text-xs italic">
-                            {{ __('no_layers_yet') }}
+                            No layers yet
                         </div>
                         <div 
                             v-for="(el, index) in elements.slice().reverse()" 
@@ -362,9 +305,8 @@ onMounted(() => {
                             <div class="flex items-center gap-2 overflow-hidden">
                                 <span class="w-4 text-xs text-slate-400 font-mono">{{ elements.length - index }}</span>
                                 <svg v-if="el.type === 'text'" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-70"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
-                                <svg v-else-if="el.type === 'barcode'" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-70"><path d="M3 5v14"/><path d="M8 5v14"/><path d="M12 5v14"/><path d="M17 5v14"/><path d="M21 5v14"/></svg>
-                                <svg v-else xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-70"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
-                                <span class="truncate">{{ el.id === draggingId ? __('dragging') : (el.type === 'image' ? __('image') : (el.content || __(el.type))) }}</span>
+                                <svg v-else xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-70"><path d="M3 5v14"/><path d="M8 5v14"/><path d="M12 5v14"/><path d="M17 5v14"/><path d="M21 5v14"/></svg>
+                                <span class="truncate">{{ el.content || el.type }}</span>
                             </div>
                             <button @click.stop="removeElement(el.id)" class="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-red-50">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
@@ -424,12 +366,6 @@ onMounted(() => {
                         <div v-if="element.type === 'barcode'" class="pointer-events-none w-full h-full">
                             <canvas :id="`barcode-${element.id}`" class="w-full h-full object-contain"></canvas>
                         </div>
-
-                        <!-- Image Render -->
-                        <div v-if="element.type === 'image'" class="pointer-events-none w-full h-full">
-                            <img :src="element.content" class="w-full h-full object-contain" />
-                        </div>
-
                         
                         <!-- Resize Handles -->
                         <div v-if="selectedId === element.id" 
@@ -442,21 +378,21 @@ onMounted(() => {
                 <div class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur px-4 py-2 rounded-full shadow-sm border border-slate-200 text-xs font-medium text-slate-500 flex gap-4">
                      <span>{{ props.sheet.sticker_width }}{{ props.sheet.paper_unit }} x {{ props.sheet.sticker_height }}{{ props.sheet.paper_unit }}</span>
                      <span class="w-px h-4 bg-slate-300"></span>
-                     <span>{{ __('zoom') }}: {{ zoom * 100 }}%</span>
+                     <span>Zoom: {{ zoom * 100 }}%</span>
                 </div>
             </div>
 
             <!-- Right: Properties -->
             <div class="w-72 bg-white shadow-sm border border-slate-200 rounded-xl flex flex-col overflow-hidden">
                 <div class="p-4 border-b border-slate-100 bg-slate-50/50">
-                    <h3 class="font-semibold text-slate-900">{{ __('properties') }}</h3>
+                    <h3 class="font-semibold text-slate-900">Properties</h3>
                 </div>
                 
                 <div class="flex-1 overflow-y-auto p-4">
                     <div v-if="selectedElement" class="space-y-6">
                         <!-- Common -->
                         <div class="space-y-4">
-                            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">{{ __('position') }}</h4>
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Position</h4>
                             <div class="grid grid-cols-2 gap-3">
                                 <div>
                                     <label class="block text-xs font-medium text-slate-600 mb-1">X ({{ sheet.paper_unit }})</label>
@@ -473,27 +409,27 @@ onMounted(() => {
 
                         <!-- Text Specific -->
                         <div v-if="selectedElement.type === 'text'" class="space-y-4">
-                             <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">{{ __('typography') }}</h4>
+                             <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Typography</h4>
                             <div>
-                                <label class="block text-xs font-medium text-slate-600 mb-1">{{ __('content') }}</label>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">Content</label>
                                 <input v-model="selectedElement.content" type="text" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-1.5 text-center" />
                                 <div class="flex gap-1 mt-1.5 flex-wrap">
-                                    <button @click="selectedElement.content += '{price}'" class="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 hover:bg-slate-200 border border-slate-200 cursor-pointer">{{ __('add_price') }}</button>
-                                    <button @click="selectedElement.content += '{name}'" class="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 hover:bg-slate-200 border border-slate-200 cursor-pointer">{{ __('add_name') }}</button>
+                                    <button @click="selectedElement.content += '{price}'" class="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 hover:bg-slate-200 border border-slate-200 cursor-pointer">+ Price</button>
+                                    <button @click="selectedElement.content += '{name}'" class="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 hover:bg-slate-200 border border-slate-200 cursor-pointer">+ Name</button>
                                 </div>
                             </div>
                             <div class="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label class="block text-xs font-medium text-slate-600 mb-1">{{ __('size_px') }}</label>
+                                    <label class="block text-xs font-medium text-slate-600 mb-1">Size (px)</label>
                                     <input v-model.number="selectedElement.fontSize" type="number" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-1.5 text-center" />
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-medium text-slate-600 mb-1">{{ __('weight') }}</label>
+                                    <label class="block text-xs font-medium text-slate-600 mb-1">Weight</label>
                                     <select v-model="selectedElement.fontWeight" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-1.5">
-                                        <option value="normal">{{ __('normal') }}</option>
-                                        <option value="bold">{{ __('bold') }}</option>
-                                        <option value="100">{{ __('thin') }}</option>
-                                        <option value="900">{{ __('black') }}</option>
+                                        <option value="normal">Normal</option>
+                                        <option value="bold">Bold</option>
+                                        <option value="100">Thin</option>
+                                        <option value="900">Black</option>
                                     </select>
                                 </div>
                             </div>
@@ -501,18 +437,14 @@ onMounted(() => {
 
                         <!-- Barcode Specific -->
                         <div v-if="selectedElement.type === 'barcode'" class="space-y-4">
-                            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">{{ __('barcode_settings') }}</h4>
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Barcode Settings</h4>
                             <div>
-                                <label class="block text-xs font-medium text-slate-600 mb-1">{{ __('barcode_value') }}</label>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">Value</label>
                                 <input v-model="selectedElement.content" type="text" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-1.5 text-center" />
                             </div>
                             <div>
-                                <label class="block text-xs font-medium text-slate-600 mb-1">{{ __('barcode_type') }}</label>
-                                <select 
-                                    v-model="selectedElement.barcodeType" 
-                                    @change="selectedElement.barcodeType === 'qrcode' ? (selectedElement.lockAspectRatio = true, selectedElement.height = selectedElement.width) : null"
-                                    class="block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-1.5"
-                                >
+                                <label class="block text-xs font-medium text-slate-600 mb-1">Type</label>
+                                <select v-model="selectedElement.barcodeType" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-1.5">
                                     <option value="code128">Code 128</option>
                                     <option value="ean13">EAN-13</option>
                                     <option value="qrcode">QR Code</option>
@@ -520,44 +452,13 @@ onMounted(() => {
                             </div>
                             <div class="flex items-center pt-2">
                                 <input id="includeText" v-model="selectedElement.includeText" type="checkbox" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
-                                <label for="includeText" class="ml-2 block text-sm text-slate-600">{{ __('show_human_readable') }}</label>
-                            </div>
-                            <div class="flex items-center pt-2">
-                                <input id="lockAspectBarcode" v-model="selectedElement.lockAspectRatio" type="checkbox" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
-                                <label for="lockAspectBarcode" class="ml-2 block text-sm text-slate-600">{{ __('lock_aspect_ratio') }}</label>
+                                <label for="includeText" class="ml-2 block text-sm text-slate-600">Show human-readable text</label>
                             </div>
                         </div>
-
-                        <!-- Image Specific -->
-                        <div v-if="selectedElement.type === 'image'" class="space-y-4">
-                            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">{{ __('image_settings') }}</h4>
-                            <div class="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label class="block text-xs font-medium text-slate-600 mb-1">{{ __('width') }} ({{ sheet.paper_unit }})</label>
-                                    <input v-model.number="selectedElement.width" type="number" step="0.1" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-1.5 text-center" />
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-slate-600 mb-1">{{ __('height') }} ({{ sheet.paper_unit }})</label>
-                                    <input v-model.number="selectedElement.height" type="number" step="0.1" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-1.5 text-center" />
-                                </div>
-                            </div>
-                            <div class="flex items-center pt-2">
-                                <input id="lockAspect" v-model="selectedElement.lockAspectRatio" type="checkbox" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
-                                <label for="lockAspect" class="ml-2 block text-sm text-slate-600">{{ __('lock_aspect_ratio') }}</label>
-                            </div>
-                            <div class="pt-2">
-                                <label class="w-full flex items-center justify-center p-2 bg-indigo-50 text-indigo-700 rounded-lg border border-indigo-200 hover:bg-indigo-100 transition-all cursor-pointer text-sm font-medium">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"/><polyline points="16 5 21 5 21 10"/><path d="m21 5-7 7"/></svg>
-                                    {{ __('replace_image') }}
-                                    <input type="file" class="hidden" accept="image/*" @change="replaceImage" />
-                                </label>
-                            </div>
-                        </div>
-
                     </div>
                     <div v-else class="h-full flex flex-col items-center justify-center text-slate-400 text-sm text-center p-8 opacity-60">
                         <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="mb-3 text-slate-300"><path d="M3 3h18v18H3z"/><path d="m21 3-9 9"/><path d="m21 9-9-9"/><path d="M12 3v9"/></svg>
-                        <p>{{ __('select_element_tip') }}</p>
+                        <p>Select an element on the canvas to edit its properties</p>
                     </div>
                 </div>
             </div>

@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StickerSheetController;
 use App\Http\Controllers\SheetConfigController;
@@ -37,7 +36,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/setup', [StickerSheetController::class, 'store'])->name('setup.store');
 
     Route::get('/designer/{sheet}', [StickerSheetController::class, 'show'])->name('designer');
-    Route::put('/designer/{sheet}', [StickerSheetController::class, 'update'])->name('designer.update');
+    Route::post('/designer/{sheet}', [StickerSheetController::class, 'update'])->name('designer.update');
     Route::delete('/designer/{sheet}', [StickerSheetController::class, 'destroy'])->name('designer.destroy');
     Route::post('/designer/{sheet}/duplicate', [StickerSheetController::class, 'duplicate'])->name('designer.duplicate');
     Route::get('/designer/{sheet}/preview', [StickerSheetController::class, 'preview'])->name('designer.preview');
@@ -51,7 +50,5 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
-
-Route::post('/language', [LanguageController::class, 'switch'])->name('language.switch');
 
 require __DIR__.'/auth.php';
